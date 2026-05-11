@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const db = require('./firebase');
 
 app.use(cors());
 
@@ -34,7 +35,7 @@ const comics = [
 
 // La ruta que va a consumir Xcode
 app.get('/api/comics', (req, res) => {
-  res.json(comics);
+  res.json(getFirebaseElement("1")); // Aquí puedes cambiar el ID para obtener diferentes cómics
 });
 
 // Configuración del puerto para Render
@@ -42,3 +43,19 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`La API de cómics está corriendo en el puerto ${PORT}`);
 });
+
+async function getFirebaseElement(id) {
+  try {
+    const userRef = db.collection('usuarios').doc(id);
+    const doc = await userRef.get();
+
+    if (!doc.exists) {
+      console.log('No se encontró el documento');
+    } else {
+      console.log('Datos del documento:', doc.data());
+      return doc.data();
+    }
+  } catch (error) {
+    console.error('Error al obtener el elemento:', error);
+  }
+}
