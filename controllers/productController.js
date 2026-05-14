@@ -1,5 +1,7 @@
 const db = require('../src/firebaseConfig');
 
+
+// Controladores para productos (ruta products)
 const getProducts = async (req, res) => {
   try {
     const productsSnapshot = await db.collection('products').get();

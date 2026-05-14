@@ -1,7 +1,7 @@
 const admin = require('firebase-admin');
 require('dotenv').config();
 
-// Se recomienda usar variables de entorno para la clave privada
+// Variables de entorno para Firebase
 const serviceAccount = {
   projectId: process.env.FIREBASE_PROJECT_ID,
   privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
