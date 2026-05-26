@@ -1,26 +1,32 @@
 const db = require('../src/firebaseConfig');
 
-// Controlador para transacciones (ruta store)
 const postTransaction = async (req, res) => {
   try {
-    // 1. Extrae solo las propiedades que necesitas (Desestructuración)
-    const { id_elemento, cantidad, costo_unitario, fecha, hora } = req.body;
+    // Asumimos que req.body es un array de transacciones
+    const transactions = req.body;
 
-    // 2. Crea un objeto literal "plano". 
-    // Esto garantiza que solo estamos enviando datos puros a Firestore.
-    const newTransaction = {
-      id_elemento: id_elemento,
-      cantidad: Number(cantidad),
-      costo_unitario: Number(costo_unitario),
-      fecha: fecha,
-      hora: hora,
-      createdAt: new Date().toISOString() // Recomendación: agrega un sello de tiempo
-    };
+    // Validamos que sea un array
+    if (!Array.isArray(transactions)) {
+      return res.status(400).json({ error: "Se esperaba un array de transacciones" });
+    }
 
-    // 3. Envía el objeto limpio
-    const docRef = await db.collection('transactions').add(newTransaction);
+    // Procesamos cada transacción de forma individual
+    const promises = transactions.map(async (t) => {
+      // Creamos un objeto plano y validamos explícitamente cada campo
+      const dataToSave = {
+        id_elemento: t.id_elemento || "desconocido", // Valor por defecto si es undefined
+        cantidad: Number(t.cantidad) || 0,
+        costo_unitario: Number(t.costo_unitario) || 0,
+        fecha: t.fecha || new Date().toISOString(),
+        hora: t.hora || ""
+      };
 
-    res.status(201).json({ id: docRef.id });
+      return await db.collection('transactions').add(dataToSave);
+    });
+
+    const results = await Promise.all(promises);
+    res.status(201).json({ message: "Transacciones creadas", ids: results.map(r => r.id) });
+
   } catch (error) {
     console.error('Error al agregar transacción:', error);
     res.status(500).json({ error: 'Error al crear transacción' });
