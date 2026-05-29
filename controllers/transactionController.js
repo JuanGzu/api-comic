@@ -2,34 +2,29 @@ const db = require('../src/firebaseConfig');
 
 const postTransaction = async (req, res) => {
   try {
-    // Asumimos que req.body es un array de transacciones
-    const transactions = req.body;
+    const { id_elementos, costo_total, fecha } = req.body;
 
-    // Validamos que sea un array
-    if (!Array.isArray(transactions)) {
-      return res.status(400).json({ error: "Se esperaba un array de transacciones" });
+    // Validación básica
+    if (!id_elementos || !Array.isArray(id_elementos)) {
+      return res.status(400).json({ error: "Datos de transacción inválidos" });
     }
 
-    // Procesamos cada transacción de forma individual
-    const promises = transactions.map(async (t) => {
-      // Creamos un objeto plano y validamos explícitamente cada campo
-      const dataToSave = {
-        id_elemento: t.id_elemento || "desconocido", // Valor por defecto si es undefined
-        cantidad: Number(t.cantidad) || 0,
-        costo_unitario: Number(t.costo_unitario) || 0,
-        fecha: t.fecha || new Date().toISOString(),
-        hora: t.hora || ""
-      };
+    // Crear el objeto que se guardará en Firestore
+    const nuevaTransaccion = {
+      id_elementos: id_elementos, // Firestore soporta arrays de objetos
+      costo_total: Number(costo_total),
+      fecha: fecha,
+      creadoEn: new Date() // Timestamp del servidor
+    };
 
-      return await db.collection('transactions').add(dataToSave);
-    });
+    // Guardar como un único documento
+    const docRef = await db.collection('transactions').add(nuevaTransaccion);
 
-    const results = await Promise.all(promises);
-    res.status(201).json({ message: "Transacciones creadas", ids: results.map(r => r.id) });
+    res.status(201).json({ message: "Transacción guardada exitosamente", id: docRef.id });
 
   } catch (error) {
-    console.error('Error al agregar transacción:', error);
-    res.status(500).json({ error: 'Error al crear transacción' });
+    console.error('Error al guardar:', error);
+    res.status(500).json({ error: 'Error al procesar la transacción' });
   }
 };
 
