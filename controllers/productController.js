@@ -3,13 +3,12 @@ const db = require('../src/firebaseConfig');
 // Controladores para productos (ruta products)
 const getProducts = async (req, res) => {
   try {
-    // Leemos el límite (por defecto 10) y el ID del último documento cargado
     const limit = parseInt(req.query.limit) || 10;
     const lastId = req.query.lastId;
 
-    let query = db.collection('products').limit(limit);
+    // CRÍTICO: Añadimos .orderBy('__name__') para que Firestore sepa cómo avanzar
+    let query = db.collection('products').orderBy('__name__').limit(limit);
 
-    // Si recibimos un lastId, iniciamos la búsqueda a partir de ese documento
     if (lastId) {
       const lastDoc = await db.collection('products').doc(lastId).get();
       if (lastDoc.exists) {
