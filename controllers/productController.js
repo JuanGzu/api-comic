@@ -6,12 +6,19 @@ const getProducts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const lastId = req.query.lastId;
 
-    // CRÍTICO: Añadimos .orderBy('__name__') para que Firestore sepa cómo avanzar
-    let query = db.collection('products').orderBy('__name__').limit(limit);
+    // 1. Ordenamos por el campo interno 'id' de tus cómics
+    let query = db.collection('products').orderBy('id').limit(limit);
 
     if (lastId) {
-      const lastDoc = await db.collection('products').doc(lastId).get();
-      if (lastDoc.exists) {
+      // Convertimos el parámetro a número entero
+      const lastIdNum = parseInt(lastId);
+
+      // Buscamos el documento de Firestore donde el campo 'id' coincida
+      const lastDocSnapshot = await db.collection('products').where('id', '==', lastIdNum).get();
+
+      // Si el documento de referencia existe, paginamos a partir de él
+      if (!lastDocSnapshot.empty) {
+        const lastDoc = lastDocSnapshot.docs[0];
         query = query.startAfter(lastDoc);
       }
     }
