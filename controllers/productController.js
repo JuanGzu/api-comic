@@ -3,14 +3,29 @@ const db = require('../src/firebaseConfig');
 // Controladores para productos (ruta products)
 const getProducts = async (req, res) => {
   try {
-    const productsSnapshot = await db.collection('products').get();
+    // Leemos el límite (por defecto 10) y el ID del último documento cargado
+    const limit = parseInt(req.query.limit) || 10;
+    const lastId = req.query.lastId;
+
+    let query = db.collection('products').limit(limit);
+
+    // Si recibimos un lastId, iniciamos la búsqueda a partir de ese documento
+    if (lastId) {
+      const lastDoc = await db.collection('products').doc(lastId).get();
+      if (lastDoc.exists) {
+        query = query.startAfter(lastDoc);
+      }
+    }
+
+    const productsSnapshot = await query.get();
     const productsList = productsSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+
     res.json(productsList);
   } catch (error) {
-    console.error('Error al agregar producto:', error);
+    console.error('Error al obtener productos:', error);
     res.status(500).json({ error: 'Error al obtener productos' });
   }
 };
